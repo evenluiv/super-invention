@@ -25,6 +25,8 @@ interface Deal {
     visible_to?: "1" | "3" | "5" | "7";
 }
 
+type UpdateDeal = Partial<Deal>;
+
 dotenv.config();
 
 const app = express();
@@ -72,6 +74,35 @@ app.post('/deals', async (req: Request, res: Response) => {
 
         const data = await response.json();
         res.status(201).json(data);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.put('/deals/:id', async (req: Request, res: Response) => {
+    const dealID = req.params.id;
+    const updateData: UpdateDeal = req.body;
+
+    if (!dealID) {
+        return res.status(400).json({ error: 'Deal ID is required.' });
+    }
+
+    try {
+        const response = await fetch(`${PIPEDRIVE_API_BASE}/deals/${dealID}?api_token=${API_TOKEN}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            return res.status(response.status).json({ error: errorData });
+        }
+
+        const data = await response.json();
+        res.status(200).json(data);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
