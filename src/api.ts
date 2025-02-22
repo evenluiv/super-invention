@@ -32,11 +32,10 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
 const API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
 const PIPEDRIVE_API_BASE = process.env.PIPEDRIVE_API_BASE || 'https://api.pipedrive.com/v1';
 
-app.get('/deals', async (req: Request, res: Response) => {
+app.get('/deals', async (_req: Request, res: Response) => {
 
     try {
         const response = await fetch(`${PIPEDRIVE_API_BASE}/deals?api_token=${API_TOKEN}`);
@@ -107,11 +106,5 @@ app.put('/deals/:id', async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-if (require.main === module) {
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  }
   
 export default app;
