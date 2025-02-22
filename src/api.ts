@@ -1,4 +1,4 @@
-import express, { application, Request, Response } from "express";
+import express, { application, NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 
 interface Deal {
@@ -31,6 +31,37 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
+
+interface Metric {
+    count: number;
+    totalDuration: number;
+    totalLatency: number;
+}
+
+const metrics: Record<string, Metric> = {};
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    next();
+    const latency = Date.now() - start;
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const routePath = req.route?.path || req.path;
+        const method = req.method;
+        const key = `${method} ${routePath}`;
+
+        console.log(`${key} ${res.statusCode} ${duration}ms (Latency: ${latency}ms)`);
+
+        if (!metrics[key]) {
+            metrics[key] = { count: 0, totalDuration: 0, totalLatency: 0 };
+        }
+
+        metrics[key].count += 1;
+        metrics[key].totalDuration += duration;
+        metrics[key].totalLatency += latency;
+    });
+})
 
 const API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
 const PIPEDRIVE_API_BASE = process.env.PIPEDRIVE_API_BASE || 'https://api.pipedrive.com/v1';
@@ -105,6 +136,16 @@ app.put('/deals/:id', async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
+});
+
+app.get('/metrics', (req: Request, res: Response) => {
+    const metricsData = Object.entries(metrics).map(([endpoint, data]) => ({
+        endpoint,
+        mean_request_duration: data.totalDuration / data.count,
+        mean_latency: data.totalLatency / data.count,
+        request_count: data.count,
+    }));
+    res.status(200).json(metricsData);
 });
   
 export default app;
