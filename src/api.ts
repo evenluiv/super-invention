@@ -43,7 +43,7 @@ const metrics: Record<string, Metric> = {};
 app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     next();
-    const latency = Date.now() - start;
+    const latency = Date.now() - start + 1;
 
     res.on('finish', () => {
         const duration = Date.now() - start;
