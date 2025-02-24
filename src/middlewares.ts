@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Metric } from "./interfaces/Metric";
 
-const metrics: Record<string, Metric> = {};
+export const metrics: Record<string, Metric> = {};
 
 export async function requestMetrics(req: Request, res: Response, next: NextFunction) {
     

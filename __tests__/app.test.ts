@@ -1,208 +1,324 @@
-import request from 'supertest';
-import app from '../src/api';
+// functions.test.ts
+import { Request, Response } from "express";
+import { getDeals, postDeals, updateDeal } from "../src/api/deals";
+import { getMetrics, metrics } from "../src/middlewares";
 
-global.fetch = jest.fn();
+// Helper function to create a mock Response object
+const createMockResponse = () => {
+  const res: Partial<Response> = {};
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
+  return res as Response;
+};
 
-const API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
-const PIPEDRIVE_API_BASE = process.env.PIPEDRIVE_API_BASE || 'https://api.pipedrive.com/v1';
+describe("getDeals", () => {
+  beforeEach(() => {
+    (global as any).fetch = jest.fn();
+  });
 
-describe('Deals API', () => {
   afterEach(() => {
-    jest.clearAllMocks(); // Clear mocks after each test
+    jest.resetAllMocks();
   });
 
-  describe('GET /deals', () => {
-    beforeEach(() => {
-      jest.resetAllMocks();
-    });
-  
-    it('should respond with 200 status code and data when fetch is successful', async () => {
-      const mockData = { deals: [{ id: 1, title: 'Test Deal' }] };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockData),
-      });
-  
-      const response = await request(app).get('/deals');
-      
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual(mockData);
-      expect(global.fetch).toHaveBeenCalledWith(
-        `${PIPEDRIVE_API_BASE}/deals?api_token=${API_TOKEN}`
-      );
+  it("should return 200 and deals data when fetch is successful", async () => {
+    const mockData = { success: true, deals: [{ id: 1, title: "Deal 1" }] };
+    (global as any).fetch.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockData),
     });
 
-    it('should forward non-200 status codes from API', async () => {
-      const errorData = { error: 'Unauthorized' };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: () => Promise.resolve(errorData),
-      });
-  
-      const response = await request(app).get('/deals');
-      
-      expect(response.statusCode).toBe(401);
-      expect(response.body).toEqual({ error: errorData });
-    });
-  
-    it('should handle server errors', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
-  
-      const response = await request(app).get('/deals');
-      
-      expect(response.statusCode).toBe(500);
-      expect(response.body.error).toMatch('Network error');
-    });
+    const req = {} as Request;
+    const res = createMockResponse();
+
+    await getDeals(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(mockData);
   });
 
-  describe('POST /deals', () => {
-    it('should create a new deal', async () => {
-      const mockDeal = {
-        title: 'Test Deal',
-      };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 201,
-        json: async () => ({ data: mockDeal })
-      });
-
-      const response = await request(app)
-        .post('/deals')
-        .send({
-          title: 'Test Deal',
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual({ data: mockDeal });
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/deals?api_token='),
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: 'Test Deal',
-          })
-        })
-      );
+  it("should return error response when fetch response is not ok", async () => {
+    const errorData = { message: "Bad Request" };
+    (global as any).fetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: jest.fn().mockResolvedValue(errorData),
     });
 
-    it('should return 400 if title is missing', async () => {
-      const response = await request(app)
-        .post('/deals')
-        .send({
-          value: 1000
-        });
+    const req = {} as Request;
+    const res = createMockResponse();
 
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        error: 'The "title" field is required.'
-      });
-    });
+    await getDeals(req, res);
 
-    it('should handle Pipedrive API errors', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: async () => ({ error: 'Bad request' })
-      });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: errorData });
+  });
 
-      const response = await request(app)
-        .post('/deals')
-        .send({
-          title: 'Bad Deal'
-        });
+  it("should return 500 when fetch throws an error", async () => {
+    const errorMessage = "Network error";
+    (global as any).fetch.mockRejectedValue(new Error(errorMessage));
 
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: { error: 'Bad request' } });
-    });
+    const req = {} as Request;
+    const res = createMockResponse();
 
-    it('should handle server errors', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    await getDeals(req, res);
 
-      const response = await request(app)
-        .post('/deals')
-        .send({
-          title: 'Test Deal'
-        });
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+  });
+});
 
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Network error' });
+describe("postDeals", () => {
+  beforeEach(() => {
+    (global as any).fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should return 400 if "title" is missing in the deal', async () => {
+    const req = { body: {} } as Request;
+    const res = createMockResponse();
+
+    await postDeals(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'The "title" field is required.',
     });
   });
 
-  describe('PUT /deals/:id', () => {
-    it('should update an existing deal', async () => {
-      const mockDeal = {
-        title: 'Updated Deal',
-      };
+  it("should return 201 and deal data when fetch is successful", async () => {
+    const deal = { title: "New Deal", amount: 1000 };
+    const mockData = { success: true, data: deal };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ data: mockDeal })
-      });
-
-      const response = await request(app)
-        .put('/deals/123')
-        .send({
-          title: 'Updated Deal',
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ data: mockDeal });
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${PIPEDRIVE_API_BASE}/deals/123?api_token=${API_TOKEN}`),
-        expect.objectContaining({
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: 'Updated Deal',
-          })
-        })
-      );
+    (global as any).fetch.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockData),
     });
 
-    it('should return 400 if deal ID is missing', async () => {
-      const response = await request(app)
-        .put('/deals/')
-        .send({
-          title: 'Updated Deal'
-        });
+    const req = { body: deal } as Request;
+    const res = createMockResponse();
 
-      expect(response.status).toBe(404);
-    });
+    await postDeals(req, res);
 
-    it('should handle Pipedrive API errors', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        json: async () => ({ error: 'Deal not found' })
-      });
-
-      const response = await request(app)
-        .put('/deals/999')
-        .send({
-          title: 'Non-existent Deal'
-        });
-
-      expect(response.status).toBe(404);
-      expect(response.body).toEqual({ error: { error: 'Deal not found' } });
-    });
-
-    it('should handle server errors', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
-
-      const response = await request(app)
-        .put('/deals/123')
-        .send({
-          title: 'Updated Deal'
-        });
-
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Database error' });
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/deals?api_token="),
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(deal),
+      })
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(mockData);
   });
 
+  it("should return error response when fetch response is not ok", async () => {
+    const deal = { title: "New Deal" };
+    const errorData = { message: "Invalid data" };
+
+    (global as any).fetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: jest.fn().mockResolvedValue(errorData),
+    });
+
+    const req = { body: deal } as Request;
+    const res = createMockResponse();
+
+    await postDeals(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: errorData });
+  });
+
+  it("should return 500 when fetch throws an error", async () => {
+    const deal = { title: "New Deal" };
+    const errorMessage = "Network error";
+
+    (global as any).fetch.mockRejectedValue(new Error(errorMessage));
+
+    const req = { body: deal } as Request;
+    const res = createMockResponse();
+
+    await postDeals(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+  });
+});
+
+describe("updateDeal", () => {
+  beforeEach(() => {
+    (global as any).fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it("should return 400 if deal ID is missing", async () => {
+    const req = {
+      params: {},
+      body: { status: "won" },
+    } as unknown as Request;
+    const res = createMockResponse();
+
+    await updateDeal(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: "Deal ID is required." });
+  });
+
+  it("should return 200 and updated deal data when fetch is successful", async () => {
+    const updateData = { status: "lost" };
+    const mockData = { success: true, data: updateData };
+
+    (global as any).fetch.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockData),
+    });
+
+    const req = {
+      params: { id: "123" },
+      body: updateData,
+    } as unknown as Request;
+    const res = createMockResponse();
+
+    await updateDeal(req, res);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/deals/123?api_token="),
+      expect.objectContaining({
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(mockData);
+  });
+
+  it("should return error response when fetch response is not ok", async () => {
+    const updateData = { status: "lost" };
+    const errorData = { message: "Update failed" };
+
+    (global as any).fetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: jest.fn().mockResolvedValue(errorData),
+    });
+
+    const req = {
+      params: { id: "123" },
+      body: updateData,
+    } as unknown as Request;
+    const res = createMockResponse();
+
+    await updateDeal(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: errorData });
+  });
+
+  it("should return 500 when fetch throws an error", async () => {
+    const updateData = { status: "lost" };
+    const errorMessage = "Network error";
+
+    (global as any).fetch.mockRejectedValue(new Error(errorMessage));
+
+    const req = {
+      params: { id: "123" },
+      body: updateData,
+    } as unknown as Request;
+    const res = createMockResponse();
+
+    await updateDeal(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+  });
+});
+
+describe("getMetrics", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
+  let jsonMock: jest.Mock;
+  let statusMock: jest.Mock;
+
+  beforeEach(() => {
+    // Clear the global metrics object before each test
+    for (const key in metrics) {
+      delete metrics[key];
+    }
+    
+    // Create a minimal mock for the Express request
+    req = {};
+
+    // Create a mock for the Express response
+    jsonMock = jest.fn();
+    statusMock = jest.fn(() => ({ json: jsonMock }));
+    res = { status: statusMock } as unknown as Response;
+  });
+
+  it("should return an empty array when no metrics exist", async () => {
+    await getMetrics(req as Request, res as Response);
+    expect(statusMock).toHaveBeenCalledWith(200);
+    expect(jsonMock).toHaveBeenCalledWith([]);
+  });
+
+  it("should return correct metrics data for a single endpoint", async () => {
+    const key = "GET /test";
+    metrics[key] = {
+      count: 2,
+      totalDuration: 100, // total request duration in ms
+      totalLatency: 40,   // total latency in ms
+    };
+
+    await getMetrics(req as Request, res as Response);
+
+    expect(statusMock).toHaveBeenCalledWith(200);
+    expect(jsonMock).toHaveBeenCalledWith([
+      {
+        endpoint: key,
+        mean_request_duration: 50, // 100 / 2
+        mean_latency: 20,          // 40 / 2
+        request_count: 2,
+      },
+    ]);
+  });
+
+  it("should return correct metrics data for multiple endpoints", async () => {
+    metrics["GET /test"] = {
+      count: 2,
+      totalDuration: 100,
+      totalLatency: 40,
+    };
+    metrics["POST /submit"] = {
+      count: 3,
+      totalDuration: 150,
+      totalLatency: 60,
+    };
+
+    await getMetrics(req as Request, res as Response);
+
+    expect(statusMock).toHaveBeenCalledWith(200);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        {
+          endpoint: "GET /test",
+          mean_request_duration: 50, // 100 / 2
+          mean_latency: 20,          // 40 / 2
+          request_count: 2,
+        },
+        {
+          endpoint: "POST /submit",
+          mean_request_duration: 50, // 150 / 3
+          mean_latency: 20,          // 60 / 3
+          request_count: 3,
+        },
+      ])
+    );
+  });
 });
