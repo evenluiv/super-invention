@@ -1,11 +1,8 @@
-import express, { application, NextFunction, Request, Response } from "express";
-import { PIPEDRIVE_API_BASE, API_TOKEN } from "./config";
-import { Deal, UpdateDeal } from "./interfaces/Deal";
+import { Request, Response } from "express";
+import { PIPEDRIVE_API_BASE, API_TOKEN } from "../config";
+import { Deal, UpdateDeal } from "../interfaces/Deal";
 
-const app = express();
-app.use(express.json());
-
-app.get('/deals', async (_req: Request, res: Response) => {
+export async function getDeals(_req: Request, res: Response) {
 
     try {
         const response = await fetch(`${PIPEDRIVE_API_BASE}/deals?api_token=${API_TOKEN}`);
@@ -18,9 +15,9 @@ app.get('/deals', async (_req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
-});
+};
 
-app.post('/deals', async (req: Request, res: Response) => {
+export async function postDeals(req: Request, res: Response) {
     const deal: Deal = req.body;
 
     if (!deal.title) {
@@ -46,9 +43,9 @@ app.post('/deals', async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
-});
+};
 
-app.put('/deals/:id', async (req: Request, res: Response) => {
+export async function updateDeal(req: Request, res: Response) {
     const dealID = req.params.id;
     const updateData: UpdateDeal = req.body;
 
@@ -75,6 +72,4 @@ app.put('/deals/:id', async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
-});
-
-export default app;
+};
