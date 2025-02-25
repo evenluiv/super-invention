@@ -15,7 +15,7 @@ export async function requestMetrics(req: Request, res: Response, next: NextFunc
         const method = req.method;
         const key = `${method} ${routePath}`;
 
-        console.log(`${key} ${res.statusCode} ${duration}ms (Latency: ${latency}ms)`);
+        console.log(`${key} ${res.statusCode} ${duration}ms (Latency: ${latency}ms) responseType{${res.get('Content-Type')}}`);
 
         if (!metrics[key]) {
             metrics[key] = { count: 0, totalDuration: 0, totalLatency: 0 };
