@@ -1,9 +1,9 @@
-// functions.test.ts
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
 import { getDeals, postDeals, updateDeal } from "../src/api/deals";
 import { getMetrics, metrics } from "../src/middlewares";
 
-// Helper function to create a mock Response object
+global.fetch = jest.fn();
+
 const createMockResponse = () => {
   const res: Partial<Response> = {};
   res.status = jest.fn().mockReturnValue(res);
