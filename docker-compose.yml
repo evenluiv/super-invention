@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: super-invention-app
+    ports:
+      - '${PORT}:${PORT}'
+    environment:
+      - PORT=${PORT}
+      - PIPEDRIVE_API_TOKEN=${PIPEDRIVE_API_TOKEN}
+      - PIPEDRIVE_API_BASE=${PIPEDRIVE_API_BASE}
+    env_file:
+      - .env
