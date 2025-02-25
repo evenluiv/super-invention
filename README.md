@@ -104,6 +104,27 @@ Run linting with:
 npm run lint
 ```
 
+## Technolgies used
+
+### This project is built using the following technologies:
+
+* #### Runtime & Frameworks
+    * Node.js – JavaScript runtime
+    * Express - Web framework for Node.js to easily build API
+* #### Development & Tooling
+    * TypeScript – Strongly typed JavaScript
+    * ts-node – TypeScript execution environment
+    * ESLint – Linter for maintaining code quality
+    * dotenv – Environment variable management
+* #### Testing
+    * Jest – easy and simple JavaScript testing framework
+    * Supertest – HTTP assertions for API testing
+    * Nock – Mock HTTP requests for testing
+    * Postman – API testing and debugging
+* #### Build & CI/CD
+    * TypeScript Compiler (tsc) – Compiles TypeScript to JavaScript
+    * GitHub Actions – CI/CD pipeline
+
 ## Author
 
 - [@evenluiv](https://github.com/evenluiv)
