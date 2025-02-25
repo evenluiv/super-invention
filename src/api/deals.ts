@@ -66,6 +66,11 @@ export async function updateDeal(req: Request, res: Response) {
         return res.status(400).json({ error: 'Deal ID is required.' });
     }
 
+    if (!updateData || Object.keys(updateData).length === 0) {
+        console.warn("PUT /deals failed - Empty update data");
+        return res.status(400).json({ error: 'Update data cannot be empty.' });
+    }
+
     try {
         const response = await fetch(`${PIPEDRIVE_API_BASE}/deals/${dealID}?api_token=${API_TOKEN}`, {
             method: 'PUT',
