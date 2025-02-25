@@ -28,11 +28,20 @@ export async function requestMetrics(req: Request, res: Response, next: NextFunc
 }
 
 export async function getMetrics(_req: Request, res: Response) {
-    const metricsData = Object.entries(metrics).map(([endpoint, data]) => ({
-        endpoint,
-        mean_request_duration: data.totalDuration / data.count,
-        mean_latency: data.totalLatency / data.count,
-        request_count: data.count,
-    }));
-    res.status(200).json(metricsData);
+    console.log("GET /metrics request received");
+
+    try {
+        const metricsData = Object.entries(metrics).map(([endpoint, data]) => ({
+            endpoint,
+            mean_request_duration: data.totalDuration / data.count,
+            mean_latency: data.totalLatency / data.count,
+            request_count: data.count,
+        }));
+
+        console.log("GET /metrics success - Returning metrics data", metricsData);
+        res.status(200).json(metricsData);
+    } catch (error: any) {
+        console.error("Internal server error in GET /metrics", { error: error.message });
+        res.status(500).json({ error: error.message });
+    }
 }
