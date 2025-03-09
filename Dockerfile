@@ -8,7 +8,7 @@ WORKDIR /src
 
 # Copy necessary files
 COPY package*.json tsconfig.json ./
-COPY . .
+COPY src/ ./src/
 
 # Install dependencies
 RUN npm ci
