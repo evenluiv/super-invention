@@ -5,10 +5,6 @@ on:
     branches:
       - main
 
-env:
-  PIPEDRIVE_API_BASE: ${{secrets.PIPEDRIVE_API_BASE}}
-  PIPEDRIVE_API_TOKEN: ${{secrets.PIPEDRIVE_API_TOKEN}}
-
 jobs:
   build:
     runs-on: ubuntu-latest
