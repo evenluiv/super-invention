@@ -7,7 +7,7 @@
     "strict": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["__test__"]
+  "include": ["./**/*"],
+  "exclude": ["__tests__"]
 }
   
