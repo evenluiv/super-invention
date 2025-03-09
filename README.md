@@ -35,8 +35,11 @@ cp .env.example .env
 
 #### 3. Run Docker:
 ```
-docker build -t super-invention:latest .
-docker run -p 3000:3000 super-invention:latest
+docker compose up -d
+```
+To power down the container use:
+```
+docker compose down
 ```
 ## My task logging:
 
