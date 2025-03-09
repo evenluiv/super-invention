@@ -19,7 +19,7 @@ jobs:
           node-version: 23
 
       - name: install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run linting
         run: npm run lint
