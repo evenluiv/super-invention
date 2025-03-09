@@ -1,23 +1,46 @@
-# Use the specified Node.js version as the base image
-FROM node:23.6.1-alpine
+#
+### STAGE 1: BUILD ###
+#
+FROM node:23.6.1-alpine AS build
 
-# Set the working directory inside the container
-WORKDIR /app
+# Set working directory
+WORKDIR /src
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of your application code
+# Copy necessary files
+COPY package*.json tsconfig.json ./
 COPY . .
 
-# Build the TypeScript code
+# Install dependencies
+RUN npm ci
+
+# Run the build command
 RUN npm run build
 
-# Expose the port your application will run on
+#
+### STAGE 2: PRODUCTION ###
+#
+FROM node:23.6.1-alpine
+
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Set working directory
+WORKDIR /app
+
+# Copy production artifacts
+COPY --from=build /src/dist ./dist
+
+# Copy package.json so npm can run
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --omit=dev
+
+# Switch to non-root user
+USER appuser
+
+# Expose the port
 EXPOSE 3000
 
-# Define the command to run your application
+# Start the app
 CMD ["npm", "start"]
